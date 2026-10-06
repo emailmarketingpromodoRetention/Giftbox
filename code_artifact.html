@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Обери свій кейс - Dnipro-M</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            orange: '#ff5c00',
+                            orangeHover: '#e05200',
+                            black: '#1a1a1a',
+                            dark: '#222222',
+                            metalDark: '#2a2f35',
+                            metalLight: '#3f4751',
+                        }
+                    },
+                    boxShadow: {
+                        'neon-orange': '0 0 25px rgba(255, 92, 0, 0.8), inset 0 0 15px rgba(255, 92, 0, 0.4)',
+                        'case': '0 10px 25px rgba(0,0,0,0.8), inset 0 2px 2px rgba(255,255,255,0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #121212;
+            background-image: radial-gradient(circle at center, #262626 0%, #0a0a0a 100%);
+            background-attachment: fixed;
+            color: white;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        .workshop-texture {
+            background-image: 
+                linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111),
+                linear-gradient(45deg, #111 25%, transparent 25%, transparent 75%, #111 75%, #111);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+            opacity: 0.3;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Wiggle Animation for untouched cases */
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg) scale(1); }
+            2% { transform: rotate(-3deg) scale(1.02); }
+            4% { transform: rotate(3deg) scale(1.02); }
+            6% { transform: rotate(-3deg) scale(1.02); }
+            8% { transform: rotate(3deg) scale(1.02); }
+            10% { transform: rotate(0deg) scale(1); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+
+        .animate-wiggle {
+            animation: wiggle 4s infinite ease-in-out;
+            cursor: pointer;
+        }
+        
+        .animate-wiggle:hover {
+            transform: scale(1.05);
+            transition: transform 0.2s;
+            animation: none;
+        }
+
+        /* Case Structure Styles */
+        .case-wrapper {
+            perspective: 1000px;
+            transition: all 0.3s ease;
+        }
+
+        .case {
+            position: relative;
+            width: 100%;
+            max-width: 280px;
+            margin: 0 auto;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .case-lid {
+            background: linear-gradient(to bottom, #3a3a3a, #2a2a2a);
+            height: 60px;
+            border-radius: 8px 8px 0 0;
+            border: 2px solid #444;
+            border-bottom: 3px solid #111;
+            position: relative;
+            z-index: 20;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.5) inset;
+        }
+
+        .case-handle {
+            width: 80px;
+            height: 25px;
+            border: 4px solid #1a1a1a;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2a2a2a;
+        }
+
+        .case-latch {
+            width: 20px;
+            height: 30px;
+            background: linear-gradient(to bottom, #999, #555);
+            position: absolute;
+            bottom: -15px;
+            border-radius: 3px;
+            border: 1px solid #111;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            z-index: 25;
+            transition: transform 0.3s ease;
+        }
+
+        .case-latch.left { left: 15%; }
+        .case-latch.right { right: 15%; }
+
+        .case-body {
+            background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
+            height: 180px;
+            border-radius: 0 0 8px 8px;
+            border: 2px solid #444;
+            border-top: none;
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+
+        .case-logo {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: -1px -1px 0 #111, 1px 1px 0 #444;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Glow and Reward inside Case */
+        .case-inside {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.5s ease 0.2s;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .winner-glow {
+            position: absolute;
+            inset: -20px;
+            background: radial-gradient(circle, rgba(255,92,0,0.4) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Open State Styles */
+        .is-open .case-lid {
+            transform: translateY(-50px);
+        }
+        
+        .is-open .case-latch {
+            transform: translateY(-50px) rotateX(45deg);
+        }
+
+        .is-open .case-logo {
+            opacity: 0;
+        }
+
+        .is-open .case-inside {
+            opacity: 1;
+        }
+
+        .is-winner .winner-glow {
+            opacity: 1;
+            animation: pulse-glow 2s infinite alternate;
+        }
+
+        .is-loser .case-body {
+            filter: brightness(0.5);
+        }
+
+        .is-loser .case-lid {
+            filter: brightness(0.5);
+            transform: translateY(-30px); /* Loser cases don't open as wide */
+        }
+        
+        .is-loser .case-latch {
+            transform: translateY(-30px);
+        }
+
+        @keyframes pulse-glow {
+            0% { transform: scale(0.95); opacity: 0.6; }
+            100% { transform: scale(1.05); opacity: 1; }
+        }
+
+        /* Modal Animation */
+        @keyframes modal-pop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .modal-animate {
+            animation: modal-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans relative">
+    
+    <div class="workshop-texture"></div>
+
+    <header class="text-center pt-12 pb-8 px-4 relative z-10">
+        <h1 class="text-4xl md:text-5xl font-black text-white uppercase tracking-tight mb-4 drop-shadow-lg">
+            Обери свій <span class="text-brand-orange">Кейс</span>
+        </h1>
+        <p class="text-gray-400 text-sm md:text-base max-w-xl mx-auto font-medium">
+            Один із трьох кейсів приховує особливий подарунок. Випробуй свою вдачу!
+        </p>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center px-4 relative z-10 w-full max-w-5xl mx-auto">
+        <div id="cases-container" class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 w-full pb-10">
+            <!-- Cases will be injected by JS -->
+        </div>
+    </main>
+
+    <!-- Result Modal Overlay -->
+    <div id="resultModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-brand-metalLight to-brand-metalDark w-full max-w-md rounded-xl border-2 border-brand-orange shadow-2xl relative flex flex-col p-1">
+            
+            <div class="bg-brand-black p-6 rounded-t-lg text-center relative overflow-hidden">
+                <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-orange/20 to-transparent"></div>
+                <h3 id="modalTitle" class="text-2xl font-black uppercase text-white tracking-wide relative z-10">Твій Виграш!</h3>
+            </div>
+
+            <div class="p-8 flex flex-col items-center text-center bg-brand-dark rounded-b-lg">
+                <div class="w-24 h-24 mb-6 text-brand-orange flex items-center justify-center bg-black/30 rounded-full border border-gray-700 shadow-inner">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"></path></svg>
+                </div>
+                
+                <h4 id="modalRewardText" class="text-xl md:text-2xl font-bold text-white mb-6">Назва подарунка</h4>
+                
+                <div id="promoCodeSection" class="w-full hidden flex-col gap-2">
+                    <p class="text-sm text-gray-400 uppercase tracking-wider font-semibold">Ваш промокод:</p>
+                    <div class="flex items-center justify-between bg-black border border-gray-600 rounded overflow-hidden">
+                        <code id="promoCodeValue" class="px-4 py-3 text-2xl font-mono text-brand-orange font-bold w-full text-center tracking-widest"></code>
+                        <button id="copyBtn" class="bg-brand-orange hover:bg-brand-orangeHover text-white px-5 py-4 font-semibold transition-colors flex items-center justify-center h-full">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button id="closeModalBtn" class="mt-8 text-gray-400 hover:text-white transition-colors underline decoration-dotted underline-offset-4">Закрити</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast for copy -->
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 z-[100] bg-green-600 text-white px-6 py-3 rounded shadow-lg font-bold transition-all duration-300 opacity-0 -translate-y-10 pointer-events-none">
+        Скопійовано!
+    </div>
+
+    <footer class="mt-auto py-6 text-center z-10 relative">
+        <button id="resetDebugBtn" class="text-xs text-gray-600 hover:text-gray-400 transition-colors opacity-50 hover:opacity-100">
+            Скинути прогрес (для тестування)
+        </button>
+    </footer>
+
+    <script>
+        // 1. Data Setup
+        const REWARDS = [
+            { id: 1, type: 'discount', text: 'Знижка -15%', code: 'DNIPRO15', weight: 0.3, color: 'text-brand-orange' },
+            { id: 2, type: 'delivery', text: 'Безкоштовна доставка', code: 'FREEDEL', weight: 0.3, color: 'text-blue-400' },
+            { id: 3, type: 'tip', text: 'Порада: Завжди одягайте захисні окуляри!', code: null, weight: 0.4, color: 'text-yellow-400' }
+        ];
+
+        const STORAGE_KEY = 'dnipro_case_game_state';
+        let gameState = null;
+        let isAnimating = false;
+
+        // 2. Logic Functions
+        function getRandomReward() {
+            const rand = Math.random();
+            let sum = 0;
+            for (let r of REWARDS) {
+                sum += r.weight;
+                if (rand <= sum) return r;
+            }
+            return REWARDS[REWARDS.length - 1]; // Fallback
+        }
+
+        function generateGameState(selectedIndex) {
+            const winnerReward = getRandomReward();
+            
+            // Assign rewards to all cases
+            const assignedRewards = [];
+            for (let i = 0; i < 3; i++) {
+                if (i === selectedIndex) {
+                    assignedRewards.push(winnerReward);
+                } else {
+                    // Pick a random reward for the losers just for display
+                    let randomLoser;
+                    do {
+                        randomLoser = REWARDS[Math.floor(Math.random() * REWARDS.length)];
+                    } while (randomLoser.id === winnerReward.id && REWARDS.length > 1);
+                    assignedRewards.push(randomLoser);
+                }
+            }
+
+            return {
+                played: true,
+                selectedIndex: selectedIndex,
+                assignedRewards: assignedRewards
+            };
+        }
+
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
+        }
+
+        function loadState() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    gameState = JSON.parse(saved);
+                } catch (e) {
+                    gameState = null;
+                }
+            }
+        }
+
+        // 3. UI Rendering
+        function createCaseHTML(index) {
+            return `
+                <div class="case-wrapper cursor-pointer w-full flex justify-center" id="wrapper-${index}" onclick="handleCaseClick(${index})">
+                    <div class="case animate-wiggle" id="case-${index}">
+                        <div class="case-lid">
+                            <div class="case-handle"></div>
+                            <div class="case-latch left"></div>
+                            <div class="case-latch right"></div>
+                        </div>
+                        <div class="case-body">
+                            <div class="winner-glow"></div>
+                            <div class="case-logo">Dnipro-M</div>
+                            <div class="case-inside z-20">
+                                <span class="font-bold text-center text-sm md:text-base leading-tight drop-shadow-md" id="reward-text-${index}"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initUI() {
+            const container = document.getElementById('cases-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                container.innerHTML += createCaseHTML(i);
+            }
+
+            loadState();
+
+            if (gameState && gameState.played) {
+                // Instantly show results if already played
+                restorePlayedState();
+            }
+        }
+
+        function handleCaseClick(index) {
+            if (isAnimating || (gameState && gameState.played)) return;
+            isAnimating = true;
+
+            // Stop all wiggling
+            document.querySelectorAll('.animate-wiggle').forEach(el => {
+                el.classList.remove('animate-wiggle');
+            });
+
+            // Generate results
+            gameState = generateGameState(index);
+            saveState();
+
+            // Populate text for all cases
+            for (let i = 0; i < 3; i++) {
+                const r = gameState.assignedRewards[i];
+                const textEl = document.getElementById(`reward-text-${i}`);
+                textEl.textContent = r.type === 'tip' ? 'Порада' : r.text;
+                textEl.className = `font-black text-center text-lg md:text-xl leading-tight drop-shadow-md ${r.color}`;
+            }
+
+            // Animate winner case
+            const winnerCase = document.getElementById(`case-${index}`);
+            winnerCase.classList.add('is-open', 'is-winner');
+
+            // Delay opening losers
+            setTimeout(() => {
+                for (let i = 0; i < 3; i++) {
+                    if (i !== index) {
+                        const loserCase = document.getElementById(`case-${i}`);
+                        loserCase.classList.add('is-open', 'is-loser');
+                    }
+                }
+
+                // Show modal slightly after losers open
+                setTimeout(() => {
+                    showModal(gameState.assignedRewards[index]);
+                }, 800);
+
+            }, 1500);
+        }
+
+        function restorePlayedState() {
+            // Stop all wiggling
+            document.querySelectorAll('.animate-wiggle').forEach(el => {
+                el.classList.remove('animate-wiggle');
+            });
+
+            for (let i = 0; i < 3; i++) {
+                const r = gameState.assignedRewards[i];
+                const textEl = document.getElementById(`reward-text-${i}`);
+                textEl.textContent = r.type === 'tip' ? 'Порада' : r.text;
+                textEl.className = `font-black text-center text-lg md:text-xl leading-tight drop-shadow-md ${r.color}`;
+                
+                const caseEl = document.getElementById(`case-${i}`);
+                caseEl.classList.add('is-open');
+                
+                if (i === gameState.selectedIndex) {
+                    caseEl.classList.add('is-winner');
+                } else {
+                    caseEl.classList.add('is-loser');
+                }
+            }
+
+            // Show modal immediately on reload if already played
+            setTimeout(() => {
+                showModal(gameState.assignedRewards[gameState.selectedIndex]);
+            }, 500);
+        }
+
+        function showModal(reward) {
+            const modal = document.getElementById('resultModal');
+            const title = document.getElementById('modalTitle');
+            const rewardText = document.getElementById('modalRewardText');
+            const promoCodeSection = document.getElementById('promoCodeSection');
+            const promoCodeValue = document.getElementById('promoCodeValue');
+
+            if (gameState.played && !isAnimating) {
+                title.textContent = "Ваш попередній виграш";
+            }
+
+            rewardText.textContent = reward.text;
+
+            if (reward.code) {
+                promoCodeSection.classList.remove('hidden');
+                promoCodeSection.classList.add('flex');
+                promoCodeValue.textContent = reward.code;
+            } else {
+                promoCodeSection.classList.add('hidden');
+                promoCodeSection.classList.remove('flex');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.children[0].classList.add('modal-animate');
+        }
+
+        document.getElementById('closeModalBtn').addEventListener('click', () => {
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.remove('flex');
+            isAnimating = false; // game over
+        });
+
+        // Copy button using execCommand per instructions
+        document.getElementById('copyBtn').addEventListener('click', function() {
+            const code = document.getElementById('promoCodeValue').textContent;
+            
+            const textArea = document.createElement("textarea");
+            textArea.value = code;
+            document.body.appendChild(textArea);
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast();
+            } catch (err) {
+                console.error('Failed to copy', err);
+            }
+            document.body.removeChild(textArea);
+        });
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.style.opacity = '1';
+            toast.style.transform = 'translate(-50%, 0)';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -40px)';
+            }, 2000);
+        }
+
+        // Debug / Reset
+        document.getElementById('resetDebugBtn').addEventListener('click', () => {
+            localStorage.removeItem(STORAGE_KEY);
+            gameState = null;
+            isAnimating = false;
+            initUI();
+            
+            // Hide modal if open
+            document.getElementById('resultModal').classList.add('hidden');
+            document.getElementById('resultModal').classList.remove('flex');
+        });
+
+        // Initialize on load
+        window.onload = initUI;
+
+    </script>
+</body>
+</html>
